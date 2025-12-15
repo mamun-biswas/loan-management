@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-credit-card me-2"></i>Record Payment</h1>
+            <p>Accept loan repayments from borrowers</p>
+        </div>
+
+        <div class="modern-card">
+            <div class="card-header">
+                <h5><i class="fas fa-money-check-alt me-2"></i>Payment Entry Form</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            <i class="fas fa-{% if field.name == 'loan_profile' %}user{% elif field.name == 'amount' %}dollar-sign{% else %}sticky-note{% endif %} me-2"></i>
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-modern">
+                            <i class="fas fa-check-circle me-2"></i>Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info alert-modern mt-4">
+            <i class="fas fa-lightbulb me-2"></i>
+            <strong>Tip:</strong> Make sure the payment amount doesn't exceed the remaining balance. All payments are recorded permanently.
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-chart-bar me-2"></i>Active Loans</h1>
+            <p>Loans with pending balances</p>
+        </div>
+
+        <div class="modern-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-hourglass-half me-2"></i>Pending Collections</h5>
+                <span class="badge bg-warning badge-modern">{{ loans.count }} active loans</span>
+            </div>
+            <div class="card-body">
+                {% if loans %}
+                <div class="table-responsive">
+                    <table class="table modern-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-user me-1"></i> Borrower</th>
+                                <th><i class="fas fa-money-bill-wave me-1"></i> Total</th>
+                                <th><i class="fas fa-check-circle me-1"></i> Paid</th>
+                                <th><i class="fas fa-clock me-1"></i> Remaining</th>
+                                <th><i class="fas fa-percentage me-1"></i> Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ loan.name }}</div>
+                                            <small class="text-muted">ID: {{ loan.id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">${{ loan.total_amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-semibold">
+                                        <i class="fas fa-check me-1"></i>
+                                        ${{ loan.paid_sum|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-warning fw-bold">
+                                        <i class="fas fa-clock me-1"></i>
+                                        ${{ loan.remaining|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% widthratio loan.paid_sum loan.total_amount 100 as progress_percent %}
+                                        <div class="progress progress-modern flex-grow-1 me-2" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_percent }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ progress_percent|floatformat:0 }}%</small>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="display-1 text-muted mb-3">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                    <h4 class="text-success mb-3">All Loans Are Paid!</h4>
+                    <p class="text-muted">No active loans with pending balances found.</p>
+                    <a href="{% url 'create_loan' %}" class="btn btn-primary btn-modern">
+                        <i class="fas fa-plus me-2"></i>Create New Loan
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Payment Statistics -->
+        <div class="row g-3 mt-4">
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-2">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0">{{ loans.count }}</div>
+                        <small class="text-muted">Active Borrowers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-2">
+                            <i class="fas fa-hand-holding-usd fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0">
+                            ${{ total_active_balance|default:"0"|floatformat:2 }}
+                        </div>
+                        <small class="text-muted">Total Pending</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-2">
+                            <i class="fas fa-calendar-check fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0">{{ today_payments|default:"0" }}</div>
+                        <small class="text-muted">Today's Payments</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

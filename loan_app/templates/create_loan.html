@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-user-plus me-2"></i>Create Loan Profile</h1>
+            <p>Add new borrower information and loan details</p>
+        </div>
+
+        <div class="modern-card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit me-2"></i>Loan Information Form</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in loan_form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            <i class="fas fa-{% if field.name == 'name' %}user{% elif field.name == 'total_amount' %}dollar-sign{% else %}calendar{% endif %} me-2"></i>
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-modern">
+                            <i class="fas fa-save me-2"></i>Create Loan Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-search me-2"></i>Search Loan Profiles</h1>
+            <p>Find existing borrowers quickly</p>
+        </div>
+
+        <div class="modern-card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Search & Filter</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        {{ search_form.search }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                </form>
+
+                <div class="alert alert-info alert-modern">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Search by borrower name to find existing profiles
+                </div>
+            </div>
+        </div>
+
+        <div class="modern-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list me-2"></i>Existing Loan Profiles</h5>
+                <span class="badge bg-primary badge-modern">{{ loans.count }} profiles</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table modern-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-user me-1"></i> Borrower</th>
+                                <th><i class="fas fa-money-bill me-1"></i> Amount</th>
+                                <th><i class="fas fa-calendar me-1"></i> Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ loan.name }}</div>
+                                            <small class="text-muted">ID: {{ loan.id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">${{ loan.total_amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ loan.loan_entry_date }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                                    <div class="text-muted">No loan profiles found</div>
+                                    <small>Create your first loan profile using the form</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if loans.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if loans.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ loans.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for i in loans.paginator.page_range %}
+                        <li class="page-item {% if loans.number == i %}active{% endif %}">
+                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if loans.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ loans.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-group-lg .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border: 2px solid #eef2ff;
+    }
+
+    .input-group-lg .btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+</style>
+{% endblock %}

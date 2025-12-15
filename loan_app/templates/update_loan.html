@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-edit me-2"></i>Update Loan Profile</h1>
+            <p>Modify existing borrower information and loan details</p>
+        </div>
+
+        {% if selected_loan %}
+        <!-- Update Form Card -->
+        <div class="modern-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-pencil-alt me-2"></i>
+                    Edit Profile: {{ selected_loan.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning alert-modern mb-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <strong>Note:</strong> Updating loan amount will not affect existing payments. Please review carefully before saving changes.
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="loan_id" value="{{ selected_loan.id }}">
+
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            <i class="fas fa-{% if field.name == 'name' %}user{% elif field.name == 'total_amount' %}dollar-sign{% else %}calendar{% endif %} me-2"></i>
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-modern">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                        <a href="{% url 'update_loan' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <!-- Current Stats -->
+                <h6 class="mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Current Profile Statistics
+                </h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-hand-holding-usd text-primary fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted">Total Paid</small>
+                                    <div class="h5 mb-0 text-success">${{ selected_loan.paid_amount|floatformat:2 }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-clock text-warning fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted">Remaining</small>
+                                    <div class="h5 mb-0 text-warning">${{ selected_loan.remaining_amount|floatformat:2 }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Payment Progress</span>
+                        <span>
+                            {% widthratio selected_loan.paid_amount selected_loan.total_amount 100 as progress_percent %}
+                            {{ progress_percent|floatformat:0 }}% Complete
+                        </span>
+                    </div>
+                    <div class="progress progress-modern" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Selection Prompt Card -->
+        <div class="modern-card">
+            <div class="card-body text-center py-5">
+                <div class="display-1 text-primary mb-4">
+                    <i class="fas fa-hand-pointer"></i>
+                </div>
+                <h3 class="text-primary mb-3">Select a Loan Profile</h3>
+                <p class="text-muted mb-4">Use the search panel to find and select a loan profile for editing.</p>
+                <div class="alert alert-info alert-modern">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Click the "Select" button next to any profile to begin editing
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-7">
+        <div class="page-header mb-4">
+            <h1><i class="fas fa-search me-2"></i>Search Profiles</h1>
+            <p>Find and select loan profiles to update</p>
+        </div>
+
+        <!-- Search Card -->
+        <div class="modern-card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Search & Filter</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-0">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        {{ search_form.search }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="modern-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="fas fa-list me-2"></i>
+                    Available Profiles
+                    <span class="badge bg-primary badge-modern ms-2">{{ loans.count }} profiles</span>
+                </h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm active" id="viewAll">All</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="viewActive">Active</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="viewPaid">Paid</button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if loans %}
+                <div class="table-responsive">
+                    <table class="table modern-table" id="profileTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-user me-1"></i> Borrower</th>
+                                <th><i class="fas fa-money-bill-wave me-1"></i> Total</th>
+                                <th><i class="fas fa-check-circle me-1"></i> Paid</th>
+                                <th><i class="fas fa-clock me-1"></i> Remaining</th>
+                                <th><i class="fas fa-edit me-1"></i> Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr class="profile-row {% if loan.remaining > 0 %}active-loan{% else %}paid-loan{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle {% if loan.remaining > 0 %}bg-warning{% else %}bg-success{% endif %} d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ loan.name }}</div>
+                                            <small class="text-muted">ID: {{ loan.id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">${{ loan.total_amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-semibold">
+                                        <i class="fas fa-check me-1"></i>
+                                        ${{ loan.paid_sum|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if loan.remaining > 0 %}
+                                    <span class="text-warning fw-bold">
+                                        <i class="fas fa-clock me-1"></i>
+                                        ${{ loan.remaining|floatformat:2 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-success fw-bold">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        $0.00
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="?loan_id={{ loan.id }}{% if search_form.search.value %}&search={{ search_form.search.value }}{% endif %}"
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit me-1"></i>Select
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="display-1 text-muted mb-4">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No Profiles Found</h4>
+                    <p class="text-muted mb-4">Try searching with different keywords or create a new profile.</p>
+                    <a href="{% url 'create_loan' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create New Profile
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-3 mt-4">
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-2">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0">{{ total_profiles|default:loans.count }}</div>
+                        <small class="text-muted">Total Profiles</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-2">
+                            <i class="fas fa-hourglass-half fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0" id="activeCount">0</div>
+                        <small class="text-muted">Active Loans</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="modern-card">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-2">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                        <div class="h4 mb-0" id="paidCount">0</div>
+                        <small class="text-muted">Paid Off</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Count active and paid loans
+        const activeLoans = document.querySelectorAll('.active-loan').length;
+        const paidLoans = document.querySelectorAll('.paid-loan').length;
+
+        document.getElementById('activeCount').textContent = activeLoans;
+        document.getElementById('paidCount').textContent = paidLoans;
+
+        // Filter functionality
+        const viewAllBtn = document.getElementById('viewAll');
+        const viewActiveBtn = document.getElementById('viewActive');
+        const viewPaidBtn = document.getElementById('viewPaid');
+        const allRows = document.querySelectorAll('.profile-row');
+
+        viewAllBtn.addEventListener('click', function() {
+            viewAllBtn.classList.add('active');
+            viewActiveBtn.classList.remove('active');
+            viewPaidBtn.classList.remove('active');
+
+            allRows.forEach(row => row.style.display = '');
+        });
+
+        viewActiveBtn.addEventListener('click', function() {
+            viewAllBtn.classList.remove('active');
+            viewActiveBtn.classList.add('active');
+            viewPaidBtn.classList.remove('active');
+
+            allRows.forEach(row => {
+                if (row.classList.contains('active-loan')) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        viewPaidBtn.addEventListener('click', function() {
+            viewAllBtn.classList.remove('active');
+            viewActiveBtn.classList.remove('active');
+            viewPaidBtn.classList.add('active');
+
+            allRows.forEach(row => {
+                if (row.classList.contains('paid-loan')) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .btn-group .btn {
+        border-radius: 8px !important;
+        margin: 0 2px;
+    }
+
+    .btn-group .btn.active {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border-color: var(--primary-color);
+    }
+</style>
+{% endblock %}
