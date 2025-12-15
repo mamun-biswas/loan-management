@@ -33,7 +33,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 #DEBUG = True
 
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
 
 
 
@@ -88,11 +88,12 @@ WSGI_APPLICATION = 'loan_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+database_url = os.environ.get("DATABASE_URL")
 DATABASES = {'another': {
     'ENGINE': 'django.db.backends.sqlite3',
     'NAME': BASE_DIR / 'db.sqlite3',
-}, "default": dj_database_url.parse(
-    "postgresql://loan_database_fzs1_user:rx4N3EtZA4pzkbp9LRVLDfBBLMUT1vcx@dpg-d4vskber433s73ec5qd0-a.oregon-postgres.render.com/loan_database_fzs1")}
+},
+"default": dj_database_url.parse(database_url)}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
