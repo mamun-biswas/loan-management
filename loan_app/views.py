@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum, F, DecimalField, Value
 from django.db.models.functions import Coalesce
 from django.contrib import messages
+from django.utils import timezone
+
 from .models import LoanProfile, LoanPayment
 from .forms import LoanProfileForm, LoanPaymentForm, LoanSearchForm, LoanUpdateForm
 
@@ -72,9 +74,24 @@ def make_payment(request):
         remaining=F('total_amount') - F('paid_sum')
     ).filter(remaining__gt=0)
 
+    total_loans = LoanProfile.objects.all()
+    total_loan_amount = total_loans.aggregate(total=Sum('total_amount'))['total'] or 0
+
+    # Calculate total paid amount by summing all payments
+    total_paid_amount = LoanPayment.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_remaining_amount = total_loan_amount - total_paid_amount
+
+
+    today = timezone.now().date()
+    total_payments_today = LoanPayment.objects.filter(
+        payment_date__date=today
+    ).count()
+
     context = {
         'form': form,
         'loans': loans,
+        'total_active_balance': total_remaining_amount,
+        'today_payments': total_payments_today,
     }
     return render(request, 'payment.html', context)
 
@@ -110,6 +127,7 @@ def loan_history(request):
         'loan_data': loan_data,
         'search_form': search_form,
         'total_profiles': loans.count(),
+        'total_transactions': LoanPayment.objects.all().count(),
     }
     return render(request, 'history.html', context)
 
